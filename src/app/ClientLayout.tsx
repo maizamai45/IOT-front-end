@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "./navbar/page";
+import Navbar from "@/components/Navbar";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
