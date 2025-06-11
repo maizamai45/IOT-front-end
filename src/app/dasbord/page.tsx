@@ -1,13 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaLeaf, FaTemperatureHigh, FaWater, FaSun, FaChartLine } from 'react-icons/fa';
+import { dashboardService, MoistureData } from './dashboard.service';
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [latestData, setLatestData] = useState<MoistureData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLatestData = async () => {
+    try {
+      const data = await dashboardService.getLatestData();
+      setLatestData(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch data immediately when component mounts
+    fetchLatestData();
+
+    // Set up interval to fetch data every 5 seconds
+    const interval = setInterval(fetchLatestData, 5000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, []); // Empty dependency array means this effect runs once on mount
 
   const stats = [
-    { title: 'Temperature', value: '28°C', icon: <FaTemperatureHigh className="text-orange-500" /> },
+    { 
+      title: 'ความชื้น', 
+      value: latestData.length > 0 ? `${latestData[0].moistureValue}%` : 'Loading...', 
+      icon: <FaTemperatureHigh className="text-orange-500" /> 
+    },
     { title: 'Humidity', value: '65%', icon: <FaWater className="text-blue-500" /> },
     { title: 'Light Level', value: '850 lux', icon: <FaSun className="text-yellow-500" /> },
     { title: 'Soil Moisture', value: '75%', icon: <FaLeaf className="text-green-500" /> },
@@ -47,7 +77,31 @@ export default function Dashboard() {
               <FaChartLine className="text-emerald-600 text-lg sm:text-xl" />
             </div>
             <div className="h-40 sm:h-64 bg-emerald-50 rounded-lg flex items-center justify-center">
-              <p className="text-emerald-600 text-sm sm:text-base">Chart visualization will be displayed here</p>
+              {loading ? (
+                <p className="text-emerald-600 text-sm sm:text-base">Loading...</p>
+              ) : error ? (
+                <p className="text-red-600 text-sm sm:text-base">{error}</p>
+              ) : latestData.length > 0 ? (
+                <div className="text-center">
+                  <p className="text-emerald-800 text-lg sm:text-xl font-semibold">
+                    Latest Moisture: {latestData[0].moistureValue}%
+                  </p>
+                  <p className="text-emerald-600 text-sm mt-2">
+                    Raw Value: {latestData[0].rawValue}
+                  </p>
+                  <p className="text-emerald-600 text-sm">
+                    Sensor ID: {latestData[0].sensorId}
+                  </p>
+                  <p className="text-emerald-600 text-sm">
+                    Recorded: {new Date(latestData[0].recordedAt).toLocaleString()}
+                  </p>
+                  <p className="text-emerald-600 text-xs mt-2">
+                    Auto-refreshing every 5 seconds...
+                  </p>
+                </div>
+              ) : (
+                <p className="text-emerald-600 text-sm sm:text-base">No data available</p>
+              )}
             </div>
           </div>
 

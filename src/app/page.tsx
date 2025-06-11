@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
-
 export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#fff8f7] flex flex-col items-center py-6 px-2 sm:px-0">
